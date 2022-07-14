@@ -161,6 +161,7 @@ function preguntarPresupuesto() {
         // Instanciar el objeto con los datos guardados y mostrar los datos en pantalla
         presupuesto = new Presupuesto(total, restante, gastos);
         ui.insertarPresupuesto(presupuesto);
+        ui.comprobarPresupuesto(presupuesto)
         ui.imprimirGastos(gastos);
         return;
     }
