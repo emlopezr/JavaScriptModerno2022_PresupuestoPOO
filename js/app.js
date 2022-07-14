@@ -1,12 +1,10 @@
-// TODO: Añadir LocalStorage
-
 // CLASES
 
 class Presupuesto {
-    constructor(presupuesto) {
-        this.total = Number(presupuesto);
-        this.restante = Number(presupuesto);
-        this.gastos = [];
+    constructor(total, restante, gastos) {
+        this.total = Number(total);
+        this.restante = Number(restante);
+        this.gastos = gastos || [];
     }
 
     nuevoGasto(gasto) {
@@ -20,11 +18,17 @@ class Presupuesto {
     }
 
     eliminarGasto(id) {
+        // Quitar el gasto de la lista y actualizar los datos
         this.gastos = this.gastos.filter(gasto => gasto.id !== id);
         this.calcularRestante();
+
+        // Actualizar datos en pantalla
         ui.imprimirGastos(this.gastos);
         ui.actualizarRestante(this.restante);
         ui.comprobarPresupuesto(this);
+
+        // Actualizar el registro del LocalStorage
+        localStorage.setItem('presupuesto', JSON.stringify(this));
     }
 }
 
@@ -125,6 +129,7 @@ class UI {
 
 const formulario = document.querySelector('#agregar-gasto');
 const listadoGastos = document.querySelector('#gastos ul');
+const btnReset = document.querySelector('#reset-app');
 const ui = new UI();
 let presupuesto;
 
@@ -137,20 +142,37 @@ function eventListeners() {
 
     // Agregar gasto, pero antes validar el formulario
     formulario.addEventListener('submit', agregarGasto)
+
+    // Reinicar el presupuesto -> Borrar todos los datos
+    btnReset.addEventListener('click', borrarDatos);
 }
 
 // FUNCIONES
 
 function preguntarPresupuesto() {
-    // Preguntar al usuario y validar presupuesto
+    // Buscar presupuesto en LocalStorage
+    if (localStorage.getItem('presupuesto')) {
+        // Sacar los datos del LocalStorage
+        const presupuestoLS = JSON.parse(localStorage.getItem('presupuesto'));
+        const { total, restante, gastos } = presupuestoLS;
+
+        // Instanciar el objeto con los datos guardados y mostrar los datos en pantalla
+        presupuesto = new Presupuesto(total, restante, gastos);
+        ui.insertarPresupuesto(presupuesto);
+        ui.imprimirGastos(gastos);
+        return;
+    }
+
+    // Preguntar al usuario y validar presupuesto (Si no está en LocalStorage)
     let presupuestoUsuario = prompt('¿Cuál es tu presupuesto?');
 
     while (presupuestoUsuario === '' || presupuestoUsuario === null || isNaN(presupuestoUsuario) || presupuestoUsuario <= 0) {
         presupuestoUsuario = prompt('Por favor, ingrese un presupuesto válido');
     }
 
-    // Instanciar presupuesto y mostrarlo en pantalla
-    presupuesto = new Presupuesto(presupuestoUsuario);
+    // Instanciar presupuesto, guardarlo en LocalStorage y mostrarlo en pantalla
+    presupuesto = new Presupuesto(presupuestoUsuario, presupuestoUsuario);
+    localStorage.setItem('presupuesto', JSON.stringify(presupuesto));
     ui.insertarPresupuesto(presupuesto);
 }
 
@@ -187,4 +209,13 @@ function agregarGasto(e) {
 
     // Cambio de color dependiendo del presupuesto restante
     ui.comprobarPresupuesto(presupuesto);
+
+    // Actualizar el presupuesto del LocalStorage
+    localStorage.setItem('presupuesto', JSON.stringify(presupuesto));
+}
+
+function borrarDatos() {
+    // Borrar los datos del LocalStorage y recargar la página
+    localStorage.removeItem('presupuesto');
+    window.location.reload();
 }
